@@ -1,6 +1,6 @@
 # Lexer
 
-This is a lexer in Go I use as a starting point for other projects.
+This is a reusable lexer.
 
 To install:
 
@@ -29,5 +29,7 @@ func main() {
 	}
 }
 ```
+
+Another source of usage are the unit tests.
 
 Rob Pike's Lexer from his presentation was used as inspiration.

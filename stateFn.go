@@ -1,17 +1,41 @@
 package lexer
 
 import (
+	"errors"
 	"strings"
 )
 
 type stateFn func(*lexer) stateFn
 
-const (
+var (
 	_LEFT_META                  string = "{{"
 	_RIGHT_META                 string = "}}"
 	_IDENTIFIER_VALUE_INDICATOR rune   = ':'
 	_IDENTIFIER_SEPARATOR       rune   = ','
+
+	ErrMetaZeroLength     = errors.New("meta tag cannot be zero length")
+	ErrMetaIndicatorMatch = errors.New("indicator cannot match separator")
 )
+
+// SetMeta globally sets meta values to something other than the default.
+//
+//		err := lexer.SetMeta("<<", ">>", '=', '|')
+func SetMeta(left, right string, valueIndicator, valueSeparator rune) (err error) {
+	if len(left) == 0 || len(right) == 0 {
+		return ErrMetaZeroLength
+	}
+
+	if valueIndicator == valueSeparator {
+		return ErrMetaIndicatorMatch
+	}
+
+	_LEFT_META = left
+	_RIGHT_META = right
+	_IDENTIFIER_VALUE_INDICATOR = valueIndicator
+	_IDENTIFIER_SEPARATOR = valueSeparator
+
+	return
+}
 
 func isSpace(r rune) bool {
 	return r == ' ' || r == '\t'

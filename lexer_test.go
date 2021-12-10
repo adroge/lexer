@@ -10,7 +10,7 @@ import (
 )
 
 func TestTokensDone(t *testing.T) {
-	l := lexer.Build("start text {{meta}}")
+	l := lexer.Create("start text {{meta}}")
 	l.Run(context.Background())
 
 	l.NextToken()          // text
@@ -24,7 +24,7 @@ func TestTokensDone(t *testing.T) {
 }
 
 func TestContextCancel(t *testing.T) {
-	l := lexer.Build("start text {{meta}} more text {{meta}} final text is here.")
+	l := lexer.Create("start text {{meta}} more text {{meta}} final text is here.")
 
 	ctx, cancel := context.WithCancel(context.Background())
 	l.Run(ctx)
@@ -43,7 +43,7 @@ func TestContextCancel(t *testing.T) {
 }
 
 func TestBasic(t *testing.T) {
-	l := lexer.Build("x{{y}}z")
+	l := lexer.Create("x{{y}}z")
 
 	l.Run(context.Background())
 
@@ -79,7 +79,7 @@ func TestBasic(t *testing.T) {
 }
 
 func TestMeta(t *testing.T) {
-	l := lexer.Build("{{ abcd : def, R : 10\tG : 144 B : 0x3 }}")
+	l := lexer.Create("{{ abcd : def, R : 10\tG : 144 B : 0x3 }}")
 
 	l.Run(context.Background())
 
@@ -129,7 +129,7 @@ func TestMeta(t *testing.T) {
 }
 
 func TestUnclosedMeta(t *testing.T) {
-	l := lexer.Build("{{z")
+	l := lexer.Create("{{z")
 
 	l.Run(context.Background())
 
@@ -148,7 +148,7 @@ func TestUnclosedMeta(t *testing.T) {
 }
 
 func TestEndWithLeftMeta(t *testing.T) {
-	l := lexer.Build("{{")
+	l := lexer.Create("{{")
 
 	l.Run(context.Background())
 
@@ -164,7 +164,7 @@ func TestEndWithLeftMeta(t *testing.T) {
 }
 
 func TestUnclosedMetaOnValue(t *testing.T) {
-	l := lexer.Build("{{ z:")
+	l := lexer.Create("{{ z:")
 
 	l.Run(context.Background())
 
@@ -183,7 +183,7 @@ func TestUnclosedMetaOnValue(t *testing.T) {
 }
 
 func TestBadMetaIdentifierValue(t *testing.T) {
-	l := lexer.Build("{{z:*}}")
+	l := lexer.Create("{{z:*}}")
 
 	l.Run(context.Background())
 
@@ -202,7 +202,7 @@ func TestBadMetaIdentifierValue(t *testing.T) {
 }
 
 func TestNumericIdentifier(t *testing.T) {
-	l := lexer.Build("{{12}}")
+	l := lexer.Create("{{12}}")
 
 	l.Run(context.Background())
 
@@ -215,7 +215,7 @@ func TestNumericIdentifier(t *testing.T) {
 }
 
 func TestNumericIdentifierValueError(t *testing.T) {
-	l := lexer.Build("{{a:12]}}")
+	l := lexer.Create("{{a:12]}}")
 
 	l.Run(context.Background())
 
@@ -239,7 +239,7 @@ func TestNumericIdentifierValueError(t *testing.T) {
 }
 
 func TestNumericIdentifierValueBadNumber(t *testing.T) {
-	l := lexer.Build("{{a:12e12}}")
+	l := lexer.Create("{{a:12e12}}")
 
 	l.Run(context.Background())
 
@@ -259,7 +259,7 @@ func TestNumericIdentifierValueBadNumber(t *testing.T) {
 }
 
 func TestAcceptMetaFloatNumber(t *testing.T) {
-	l := lexer.Build("{{pi:3.14}}")
+	l := lexer.Create("{{pi:3.14}}")
 
 	l.Run(context.Background())
 
@@ -285,7 +285,7 @@ func TestAcceptMetaFloatNumber(t *testing.T) {
 }
 
 func TestTwoIdentifiers(t *testing.T) {
-	l := lexer.Build("{{a, b}}")
+	l := lexer.Create("{{a, b}}")
 
 	l.Run(context.Background())
 
@@ -299,6 +299,52 @@ func TestTwoIdentifiers(t *testing.T) {
 	token = l.NextToken()
 	assert.Equal(t, lexer.TokenMetaIdentifier, token.Type)
 	assert.Equal(t, "b", token.Value)
+
+	token = l.NextToken()
+	assert.Equal(t, lexer.TokenRightMeta, token.Type)
+
+	token = l.NextToken()
+	assert.Equal(t, lexer.TokenEof, token.Type)
+
+	token = l.NextToken()
+	assert.Equal(t, lexer.TokenUndefined, token.Type)
+}
+
+func TestZeroes(t *testing.T) {
+	l := lexer.Create("{{a:0,b:0.0,c:00,d:0x0}}")
+
+	l.Run(context.Background())
+
+	token := l.NextToken()
+	assert.Equal(t, lexer.TokenLeftMeta, token.Type)
+
+	token = l.NextToken()
+	assert.Equal(t, lexer.TokenMetaIdentifier, token.Type)
+	assert.Equal(t, "a", token.Value)
+	token = l.NextToken()
+	assert.Equal(t, lexer.TokenMetaNumberValue, token.Type)
+	assert.Equal(t, "0", token.String())
+
+	token = l.NextToken()
+	assert.Equal(t, lexer.TokenMetaIdentifier, token.Type)
+	assert.Equal(t, "b", token.Value)
+	token = l.NextToken()
+	assert.Equal(t, lexer.TokenMetaNumberValue, token.Type)
+	assert.Equal(t, "0.0", token.String())
+
+	token = l.NextToken()
+	assert.Equal(t, lexer.TokenMetaIdentifier, token.Type)
+	assert.Equal(t, "c", token.Value)
+	token = l.NextToken()
+	assert.Equal(t, lexer.TokenMetaNumberValue, token.Type)
+	assert.Equal(t, "00", token.String())
+
+	token = l.NextToken()
+	assert.Equal(t, lexer.TokenMetaIdentifier, token.Type)
+	assert.Equal(t, "d", token.Value)
+	token = l.NextToken()
+	assert.Equal(t, lexer.TokenMetaNumberValue, token.Type)
+	assert.Equal(t, "0x0", token.String())
 
 	token = l.NextToken()
 	assert.Equal(t, lexer.TokenRightMeta, token.Type)
