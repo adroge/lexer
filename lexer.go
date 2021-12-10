@@ -22,9 +22,9 @@ type lexer struct {
 	tokens chan Token
 }
 
-// Build creates a new lexer. input is the string to be tokenized
-func Build(input string) *lexer {
-	return &lexer{
+// Create creates a new lexer. input is the string to be tokenized
+func Create(input string) lexer {
+	return lexer{
 		input:  input,
 		tokens: make(chan Token, 2),
 	}
@@ -111,17 +111,16 @@ func (l *lexer) accept(valid string) bool {
 	return false
 }
 
-// these values are used for acceptRun
+// These values are used for acceptRun to determine the type of character that should be accepted.
 const (
 	_Numbers = iota
 	_Hex
 	_Letters
 )
 
-type checkFunc func(rune) bool
-
 // acceptRun consumes a run of runes from the valid set
 func (l *lexer) acceptRun(acceptType int) {
+	type checkFunc func(rune) bool
 	var acceptValidCharacter checkFunc
 
 	switch acceptType {

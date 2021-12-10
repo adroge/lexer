@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	lex := lexer.Build("start {{setting, x:y}} middle {{pi:3.14}} end text.")
+	lex := lexer.Create("start {{setting, x:y}} middle {{pi:3.14}} end text.")
 	lex.Run(context.Background())
 
 	for token := lex.NextToken(); token.Type != lexer.TokenUndefined; token = lex.NextToken() {
